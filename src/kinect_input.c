@@ -1,141 +1,118 @@
 #include "kinect_input.h"
-
-/* IMPLEMENTACIÓN PARA KINECT v1 (Xbox 360) CON MICROSOFT KINECT SDK 1.8
-   Requiere:
-     - Incluir headers del SDK: <Windows.h>, <NuiApi.h>
-     - Vincular con Kinect10.lib
-     - Compilar con MSVC (Visual Studio). MinGW NO enlaza con Kinect10.lib.
-*/
-
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
-#include <windows.h>
-#include <NuiApi.h>
+#include "gesture.h"
 #include <stdio.h>
 #include <string.h>
 
-static int g_inited = 0;
-static HANDLE g_skelEvent = NULL;
+#ifdef _WIN32
+#include <windows.h>
+#include <NuiApi.h>
+#endif
 
-/* Utilidad: timestamp en ms */
+/* Verbosidad (0 = silencioso) */
+#define KI_VERBOSE 0
+
+/* Estado interno */
+static INuiSensor* g_pNui = NULL;
+static int g_initialized = 0;
+
 static double now_ms(void){
+#ifdef _WIN32
     return (double)GetTickCount64();
+#else
+    return 0.0;
+#endif
 }
 
 int ki_init(void){
-    if (g_inited) return 0;
-
-    HRESULT hr = NuiInitialize(NUI_INITIALIZE_FLAG_USES_SKELETON);
-    if (FAILED(hr)) {
-        fprintf(stderr, "[kinect_input] NuiInitialize falló (hr=0x%08X)\n", (unsigned)hr);
+#ifdef _WIN32
+    int count = 0;
+    HRESULT hr = NuiGetSensorCount(&count);
+    if (FAILED(hr) || count<1){
+        if (KI_VERBOSE) fprintf(stderr,"[kinect_input] No hay sensores Kinect.\n");
+        return -1;
+    }
+    hr = NuiCreateSensorByIndex(0, &g_pNui);
+    if (FAILED(hr) || !g_pNui){
+        if (KI_VERBOSE) fprintf(stderr,"[kinect_input] NuiCreateSensorByIndex fallo.\n");
         return -1;
     }
 
-    /* Crear evento para frames de esqueleto */
-    g_skelEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    if (!g_skelEvent){
-        fprintf(stderr, "[kinect_input] CreateEvent falló\n");
-        NuiShutdown();
-        return -1;
-    }
-
-    /* Habilitar skeleton tracking (con soporte de seated para estabilidad en escritorio) */
-    DWORD flags = NUI_SKELETON_TRACKING_FLAG_ENABLE_SEATED_SUPPORT;
-    hr = NuiSkeletonTrackingEnable(g_skelEvent, flags);
+    hr = g_pNui->NuiInitialize(NUI_INITIALIZE_FLAG_USES_SKELETON);
     if (FAILED(hr)){
-        fprintf(stderr, "[kinect_input] NuiSkeletonTrackingEnable falló (hr=0x%08X)\n", (unsigned)hr);
-        CloseHandle(g_skelEvent); g_skelEvent = NULL;
-        NuiShutdown();
-        return -1;
+        if (KI_VERBOSE) fprintf(stderr,"[kinect_input] NuiInitialize fallo 0x%08X\n",(unsigned)hr);
+        g_pNui->Release(); g_pNui=NULL; return -1;
+    }
+    hr = g_pNui->NuiSkeletonTrackingEnable(NULL, 0);
+    if (FAILED(hr)){
+        if (KI_VERBOSE) fprintf(stderr,"[kinect_input] NuiSkeletonTrackingEnable fallo 0x%08X\n",(unsigned)hr);
+        g_pNui->NuiShutdown(); g_pNui->Release(); g_pNui=NULL; return -1;
     }
 
-    g_inited = 1;
-    fprintf(stdout, "[kinect_input] Kinect v1 inicializado (SDK 1.8)\n");
+    g_initialized = 1;
+    printf("[kinect_input] Kinect v1 inicializado (SDK 1.8)\n");
     return 0;
+#else
+    (void)g_initialized;
+    return -1;
+#endif
 }
 
 void ki_shutdown(void){
-    if (!g_inited) return;
-    NuiShutdown();
-    if (g_skelEvent){ CloseHandle(g_skelEvent); g_skelEvent = NULL; }
-    g_inited = 0;
+#ifdef _WIN32
+    if (g_pNui){ g_pNui->NuiShutdown(); g_pNui->Release(); g_pNui=NULL; }
+    g_initialized=0;
+#endif
 }
 
-/* Convierte NUI_SKELETON_DATA a HandSample (mano específica) */
-static void hand_from_skel(const NUI_SKELETON_DATA* sd, NUI_SKELETON_POSITION_INDEX hand_idx, HandSample* out){
-    if (!sd || !out) return;
-    NUI_SKELETON_POSITION_TRACKING_STATE tstate = sd->eSkeletonPositionTrackingState[hand_idx];
-    if (sd->eTrackingState == NUI_SKELETON_TRACKED &&
-        (tstate == NUI_SKELETON_POSITION_TRACKED || tstate == NUI_SKELETON_POSITION_INFERRED)){
-        Vector4 p = sd->SkeletonPositions[hand_idx];
-        out->x = p.x;  /* Coordenadas en metros aprox */
-        out->y = p.y;
-        out->z = p.z;
-        out->visible = (tstate == NUI_SKELETON_POSITION_TRACKED) ? 1 : 0;
-        out->t_ms = now_ms();
-    } else {
-        out->x = out->y = out->z = 0.0f;
-        out->visible = 0;
-        out->t_ms = now_ms();
-    }
+static void fill_hand(Vector4 v, HandSample* h, double tms){
+    h->x = v.x; h->y = v.y; h->z = v.z;
+    h->t_ms = tms; h->visible = 1;
 }
 
-int ki_read_hands(HandSample* right, HandSample* left){
-    if (right){ memset(right, 0, sizeof(*right)); right->t_ms = now_ms(); }
-    if (left){  memset(left,  0, sizeof(*left));  left->t_ms  = now_ms(); }
-
-    if (!g_inited) return -1;
-
-    static double last_diag = 0.0;
-    NUI_SKELETON_FRAME frame;
-    HRESULT hr = NuiSkeletonGetNextFrame(0, &frame);  // consulta directa (sin evento)
-
-    if (FAILED(hr)) {
-        // Diagnóstico cada ~1s para no inundar
-        double t = now_ms();
-        if (t - last_diag > 1000.0) {
-            fprintf(stderr, "[kinect_input] NuiSkeletonGetNextFrame FAILED hr=0x%08X\n", (unsigned)hr);
-            last_diag = t;
-        }
-        return -1;
-    }
-
-    // Suavizado opcional
-    NuiTransformSmooth(&frame, NULL);
-
-    // Busca TRACKED, y si no, POSITION_ONLY como fallback
-    const NUI_SKELETON_DATA* best_tracked = NULL;
-    const NUI_SKELETON_DATA* best_posonly = NULL;
-    int tracked_count = 0, posonly_count = 0;
-
-    for (int i=0; i<NUI_SKELETON_COUNT; ++i) {
-        const NUI_SKELETON_DATA* sd = &frame.SkeletonData[i];
-        if (sd->eTrackingState == NUI_SKELETON_TRACKED) {
-            tracked_count++;
-            if (!best_tracked) best_tracked = sd;
-        } else if (sd->eTrackingState == NUI_SKELETON_POSITION_ONLY) {
-            posonly_count++;
-            if (!best_posonly) best_posonly = sd;
+static int choose_primary_user(const NUI_SKELETON_FRAME* f){
+    int best = -1; float bestZ=9999.0f;
+    for (int i=0;i<NUI_SKELETON_COUNT;i++){
+        const NUI_SKELETON_DATA* s = &f->SkeletonData[i];
+        if (s->eTrackingState == NUI_SKELETON_TRACKED){
+            float z = s->SkeletonPositions[NUI_SKELETON_POSITION_HIP_CENTER].z;
+            if (z < bestZ){ bestZ=z; best=i; }
         }
     }
+    return best;
+}
 
-    // Log de diagnóstico 1 vez/seg
-    double t = now_ms();
-    if (t - last_diag > 1000.0) {
-        fprintf(stdout, "[kinect_input] tracked=%d posOnly=%d\n", tracked_count, posonly_count);
-        last_diag = t;
+void ki_read_hands(HandSample* right, HandSample* left){
+#ifdef _WIN32
+    if(!g_initialized){ memset(right,0,sizeof(*right)); memset(left,0,sizeof(*left)); return; }
+
+    NUI_SKELETON_FRAME sf; ZeroMemory(&sf,sizeof(sf));
+    HRESULT hr = g_pNui->NuiSkeletonGetNextFrame(0,&sf);
+    double tms = now_ms();
+
+    if (FAILED(hr)){
+        /* Silencioso: no spamear el FAILED */
+        memset(right,0,sizeof(*right)); memset(left,0,sizeof(*left));
+        right->t_ms = left->t_ms = tms; return;
     }
 
-    const NUI_SKELETON_DATA* use = best_tracked ? best_tracked : best_posonly;
-    if (!use) {
-        // No ve cuerpo: coords quedan en 0 / visible=0
-        return 0;
+    g_pNui->NuiTransformSmooth(&sf,NULL);
+
+    int idx = choose_primary_user(&sf);
+    memset(right,0,sizeof(*right));
+    memset(left,0,sizeof(*left));
+    right->t_ms=left->t_ms=tms;
+
+    if (idx < 0) return;
+
+    const NUI_SKELETON_DATA* s = &sf.SkeletonData[idx];
+
+    if (s->eSkeletonPositionTrackingState[NUI_SKELETON_POSITION_HAND_RIGHT] != NUI_SKELETON_POSITION_NOT_TRACKED){
+        fill_hand(s->SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT], right, tms);
     }
-
-    if (right) hand_from_skel(use, NUI_SKELETON_POSITION_HAND_RIGHT, right);
-    if (left)  hand_from_skel(use, NUI_SKELETON_POSITION_HAND_LEFT,  left);
-
-    return 0;
+    if (s->eSkeletonPositionTrackingState[NUI_SKELETON_POSITION_HAND_LEFT] != NUI_SKELETON_POSITION_NOT_TRACKED){
+        fill_hand(s->SkeletonPositions[NUI_SKELETON_POSITION_HAND_LEFT], left, tms);
+    }
+#else
+    (void)right; (void)left;
+#endif
 }

@@ -6,16 +6,16 @@ static void defaults(AppConfig* c){
     strcpy(c->dominant_hand,"right");
     c->use_left_precision=0;
 
-    // ==== Ajustes de gestos (más claros) ====
-    c->gp.dead_zone_cm       = 4;    // ignora micro-movimientos
-    c->gp.swipe_threshold_cm = 10;   // desplazamiento mínimo para swipe
-    c->gp.swipe_window_ms    = 350;  // ventana temporal del swipe
+    /* Parámetros de gesto — amigables para prototipo */
+    c->gp.dead_zone_cm       = 2;    // ignora micro-movimientos
+    c->gp.swipe_threshold_cm = 6;    // distancia mínima swipe
+    c->gp.swipe_window_ms    = 280;  // ventana de integración
     c->gp.pause_hold_ms      = 1000;
     c->gp.double_tap_gap_ms  = 500;
-    c->gp.speed_min_cm_s     = 35;   // velocidad mínima
-    c->gp.cooldown_ms        = 200;  // evita doble disparo
-
+    c->gp.speed_min_cm_s     = 20;   // 0.20 m/s
+    c->gp.cooldown_ms        = 350;  // + tiempo muerto entre swipes (evita “doble”)
     c->gp.use_left_precision = 0;
+
     c->distance_to_camera_m  = 1.8f;
     c->hand_height_ref_cm    = 120.0f;
     c->hand_size_scale       = 1.0f;
