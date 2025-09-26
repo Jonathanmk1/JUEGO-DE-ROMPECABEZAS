@@ -1,0 +1,11 @@
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2-image_x64-windows/debug/lib/SDL2_imaged.lib
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2-image_x64-windows/debug/bin/SDL2_imaged.dll
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2-image_x64-windows/debug/include/SDL2/SDL_image.h
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2-image_x64-windows/debug/cmake/SDL2_imageConfig.cmake
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2-image_x64-windows/debug/cmake/SDL2_imageConfigVersion.cmake
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2-image_x64-windows/debug/cmake/Findlibjxl.cmake
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2-image_x64-windows/debug/cmake/Findwebp.cmake
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2-image_x64-windows/debug/cmake/SDL2_image-shared-targets.cmake
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2-image_x64-windows/debug/cmake/SDL2_image-shared-targets-debug.cmake
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2-image_x64-windows/debug/lib/pkgconfig/SDL2_image.pc
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2-image_x64-windows/debug/share/licenses/SDL2_image/LICENSE.txt

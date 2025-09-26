@@ -1,0 +1,2 @@
+cmake -E tar: warning: skipping symbolic link "SDL-release-2.32.10/android-project-ant/AndroidManifest.xml" -> "../android-project/app/src/main/AndroidManifest.xml".
+cmake -E tar: warning: skipping symbolic link "SDL-release-2.32.10/android-project-ant/src" -> "../android-project/app/src/main/java".

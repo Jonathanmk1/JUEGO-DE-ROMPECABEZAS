@@ -6,14 +6,14 @@ static void defaults(AppConfig* c){
     strcpy(c->dominant_hand,"right");
     c->use_left_precision=0;
 
-    /* Parámetros de gesto — amigables para prototipo */
-    c->gp.dead_zone_cm       = 2;    // ignora micro-movimientos
-    c->gp.swipe_threshold_cm = 6;    // distancia mínima swipe
-    c->gp.swipe_window_ms    = 280;  // ventana de integración
+    /* Swipes más fáciles */
+    c->gp.dead_zone_cm       = 1;
+    c->gp.swipe_threshold_cm = 5;
+    c->gp.swipe_window_ms    = 500;
     c->gp.pause_hold_ms      = 1000;
     c->gp.double_tap_gap_ms  = 500;
-    c->gp.speed_min_cm_s     = 20;   // 0.20 m/s
-    c->gp.cooldown_ms        = 350;  // + tiempo muerto entre swipes (evita “doble”)
+    c->gp.speed_min_cm_s     = 10;   /* 0.10 m/s */
+    c->gp.cooldown_ms        = 300;
     c->gp.use_left_precision = 0;
 
     c->distance_to_camera_m  = 1.8f;
@@ -23,6 +23,5 @@ static void defaults(AppConfig* c){
     c->show_feedback_arrows  = 1;
     strcpy(c->hud_language,"es");
 }
-
 int cfg_load(AppConfig* out,const char* path){ (void)path; defaults(out); return 0; }
 int cfg_save(const AppConfig* in,const char* path){ (void)in; (void)path; return 0; }

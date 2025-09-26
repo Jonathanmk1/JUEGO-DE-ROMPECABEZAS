@@ -1,0 +1,12 @@
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/debug/lib/jpeg.lib
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/debug/bin/jpeg62.dll
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/debug/bin/jpeg62.pdb
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/debug/lib/turbojpeg.lib
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/debug/bin/turbojpeg.dll
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/debug/bin/turbojpeg.pdb
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/debug/lib/pkgconfig/libjpeg.pc
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/debug/lib/pkgconfig/libturbojpeg.pc
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/debug/lib/cmake/libjpeg-turbo/libjpeg-turboConfig.cmake
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/debug/lib/cmake/libjpeg-turbo/libjpeg-turboConfigVersion.cmake
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/debug/lib/cmake/libjpeg-turbo/libjpeg-turboTargets.cmake
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/debug/lib/cmake/libjpeg-turbo/libjpeg-turboTargets-debug.cmake

@@ -24,16 +24,19 @@ typedef struct {
 } GestureParams;
 
 typedef struct {
-    double x, y, z;   /* metros, coords cámara */
-    double t_ms;      /* timestamp ms */
-    int visible;      /* 1 si visible */
+    double x, y, z;
+    double t_ms;
+    int    visible;
+
+    double y_shoulder_L;
+    double y_shoulder_R;
+    double y_head;
+    int    have_refs;
 } HandSample;
 
 void gr_init(const GestureParams* p);
 void gr_push_sample(const HandSample* right, const HandSample* left);
 int  gr_poll_event(GestureEvent* out_event);
-
-/* debug (teclado) */
 void gr_debug_inject(GestureEvent e);
 
 #endif

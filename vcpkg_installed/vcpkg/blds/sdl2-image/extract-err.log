@@ -1,0 +1,4 @@
+cmake -E tar: warning: skipping symbolic link "SDL_image-release-2.8.8/Xcode/macOS/SDL2.framework/Headers" -> "Versions/Current/Headers".
+cmake -E tar: warning: skipping symbolic link "SDL_image-release-2.8.8/Xcode/macOS/SDL2.framework/Resources" -> "Versions/Current/Resources".
+cmake -E tar: warning: skipping symbolic link "SDL_image-release-2.8.8/Xcode/macOS/SDL2.framework/SDL2" -> "Versions/Current/SDL2".
+cmake -E tar: warning: skipping symbolic link "SDL_image-release-2.8.8/Xcode/macOS/SDL2.framework/Versions/Current" -> "A".

@@ -1,0 +1,4 @@
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/build/CMakeFiles/rompecabezas.dir
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/build/CMakeFiles/rompecabezas_kinect.dir
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/build/CMakeFiles/ZERO_CHECK.dir

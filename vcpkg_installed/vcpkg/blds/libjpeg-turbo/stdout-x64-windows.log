@@ -1,0 +1,21 @@
+Downloading https://github.com/libjpeg-turbo/libjpeg-turbo/archive/3.1.1.tar.gz -> libjpeg-turbo-libjpeg-turbo-3.1.1.tar.gz
+Successfully downloaded libjpeg-turbo-libjpeg-turbo-3.1.1.tar.gz
+-- Extracting source C:/Users/jonas/AppData/Local/vcpkg/downloads/libjpeg-turbo-libjpeg-turbo-3.1.1.tar.gz
+-- Applying patch add-options-for-exes-docs-headers.patch
+-- Applying patch workaround_cmake_system_processor.patch
+-- Using source at C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/blds/libjpeg-turbo/src/3.1.1-23af682a76.clean
+Downloading nasm-2.16.03-win64.zip, trying https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/win64/nasm-2.16.03-win64.zip
+Successfully downloaded nasm-2.16.03-win64.zip
+-- Found external ninja('1.12.1').
+-- Configuring x64-windows
+-- Building x64-windows-dbg
+-- Building x64-windows-rel
+-- Fixing pkgconfig file: C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/lib/pkgconfig/libjpeg.pc
+-- Fixing pkgconfig file: C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/lib/pkgconfig/libturbojpeg.pc
+-- Using cached msys2-mingw-w64-x86_64-pkgconf-1~2.3.0-1-any.pkg.tar.zst
+-- Using cached msys2-msys2-runtime-3.5.4-2-x86_64.pkg.tar.zst
+-- Using msys root at C:/Users/jonas/AppData/Local/vcpkg/downloads/tools/msys2/21caed2f81ec917b
+-- Fixing pkgconfig file: C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/debug/lib/pkgconfig/libjpeg.pc
+-- Fixing pkgconfig file: C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/debug/lib/pkgconfig/libturbojpeg.pc
+-- Installing: C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/libjpeg-turbo_x64-windows/share/libjpeg-turbo/copyright
+-- Performing post-build validation

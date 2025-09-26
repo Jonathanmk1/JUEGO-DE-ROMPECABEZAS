@@ -1,0 +1,6 @@
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/blds/sdl2-image/x64-windows-rel/CMakeFiles/SDL2_image.dir
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/blds/sdl2-image/x64-windows-rel/CMakeFiles/edit_cache.dir
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/blds/sdl2-image/x64-windows-rel/CMakeFiles/rebuild_cache.dir
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/blds/sdl2-image/x64-windows-rel/CMakeFiles/list_install_components.dir
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/blds/sdl2-image/x64-windows-rel/CMakeFiles/install.dir
+C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/blds/sdl2-image/x64-windows-rel/CMakeFiles/install/local.dir

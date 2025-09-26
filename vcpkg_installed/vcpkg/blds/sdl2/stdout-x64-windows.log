@@ -1,0 +1,21 @@
+Downloading https://github.com/libsdl-org/SDL/archive/release-2.32.10.tar.gz -> libsdl-org-SDL-release-2.32.10.tar.gz
+Successfully downloaded libsdl-org-SDL-release-2.32.10.tar.gz
+-- Extracting source C:/Users/jonas/AppData/Local/vcpkg/downloads/libsdl-org-SDL-release-2.32.10.tar.gz
+-- Applying patch deps.patch
+-- Applying patch alsa-dep-fix.patch
+-- Applying patch cxx-linkage-pkgconfig.diff
+-- Using source at C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/blds/sdl2/src/se-2.32.10-3b143ac573.clean
+-- Found external ninja('1.12.1').
+-- Configuring x64-windows
+-- Building x64-windows-dbg
+-- Building x64-windows-rel
+-- Fixing pkgconfig file: C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2_x64-windows/lib/pkgconfig/sdl2.pc
+Downloading msys2-mingw-w64-x86_64-pkgconf-1~2.3.0-1-any.pkg.tar.zst, trying https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-pkgconf-1~2.3.0-1-any.pkg.tar.zst
+Successfully downloaded msys2-mingw-w64-x86_64-pkgconf-1~2.3.0-1-any.pkg.tar.zst
+Downloading msys2-msys2-runtime-3.5.4-2-x86_64.pkg.tar.zst, trying https://mirror.msys2.org/msys/x86_64/msys2-runtime-3.5.4-2-x86_64.pkg.tar.zst
+Successfully downloaded msys2-msys2-runtime-3.5.4-2-x86_64.pkg.tar.zst
+-- Using msys root at C:/Users/jonas/AppData/Local/vcpkg/downloads/tools/msys2/21caed2f81ec917b
+-- Fixing pkgconfig file: C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2_x64-windows/debug/lib/pkgconfig/sdl2.pc
+-- Installing: C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2_x64-windows/share/sdl2/usage
+-- Installing: C:/Users/jonas/Downloads/rompecabezas-kinect-c/vcpkg_installed/vcpkg/pkgs/sdl2_x64-windows/share/sdl2/copyright
+-- Performing post-build validation
