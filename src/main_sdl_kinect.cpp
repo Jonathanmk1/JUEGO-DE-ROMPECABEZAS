@@ -1,4 +1,4 @@
-// src/main_sdl_kinect.cpp
+
 #define SDL_MAIN_HANDLED
 #define WIN32_LEAN_AND_MEAN
 #ifndef NOMINMAX
@@ -19,7 +19,7 @@
 #include <Ole2.h>
 #include <OleAuto.h>
 #include <initguid.h>
-#include <NuiApi.h> // Kinect v1.8
+#include <NuiApi.h>
 #endif
 
 #include <SDL2/SDL.h>
@@ -101,7 +101,7 @@ static bool ensure_img(){
     return true;
 }
 
-// init: si win/ren existen, reusa; si no, crea todo (modo CLI)
+// init: si win/ren existen, reusa; si no, crea todo
 static bool gfx_init(Gfx& g,int& winSize, SDL_Window* existing_win, SDL_Renderer* existing_ren){
     if(!existing_win || !existing_ren){
         if(SDL_Init(SDL_INIT_VIDEO)<0){ std::fprintf(stderr,"[SDL] %s\n",SDL_GetError()); return false; }
@@ -230,7 +230,7 @@ static void gfx_draw(Gfx& g,const Puzzle& p,bool solved){
         SDL_RenderDrawRect(g.ren,&r);
     }
 
-    // --- PANEL DERECHO: referencia 75% + cronómetro ---
+    // ========== PANEL DERECHO: referencia 75% + cronómetro ---
     int winW=0, winH=0; SDL_GetRendererOutputSize(g.ren,&winW,&winH);
     const int puzzleW = g.cell * p.N;
     const int margin  = 10;
@@ -240,13 +240,14 @@ static void gfx_draw(Gfx& g,const Puzzle& p,bool solved){
     int availH = winH;
 
     if (g.tex && availW > 32 && availH > 32){
-        // Reservamos espacio para el cronómetro
+        //espacio para el cronómetro
         int targetScaleText = std::max(2, std::min(24, availW/60)); // escala base del font
         int textH = 5 * targetScaleText;
         int textGap = 10;
         int spaceForImgH = std::max(0, availH - textH - textGap - margin);
 
-        // Escala de la referencia con 75% del “fit” y centrada
+        // Escala de la referencia de la imagen
+        // que quiera  y centrada
         float scFit = std::min(spaceForImgH / float(g.imgH), availW / float(g.imgW));
         scFit = std::max(0.0f, scFit) * 0.75f; // 75%
         int dW = std::max(1, int(g.imgW * scFit));
@@ -346,7 +347,7 @@ struct KinectCtx{
     float prev_fx = 0.f, prev_fy = 0.f; bool havePrev=false;
     float vMinFrac = 0.14f;   // vertical
 
-    // Histéresis (flanco + release)
+    // Histéresis (del umbral + release)
     float trigInH  = 1.00f, trigOutH = 0.60f;
     float trigInV  = 1.00f, trigOutV = 0.60f;
     bool  latchedH = false, latchedV = false;
@@ -511,7 +512,7 @@ static Dir kinect_step(KinectCtx& k){
         float thH = std::max(k.minPos, k.scaleH*(shoulderW>0? shoulderW:0.40f));
         float thV = std::max(k.minPos, k.scaleV*(headSpan  >0? headSpan  :0.35f));
 
-        // Offset desde neutral (mano derecha)
+        // forma neutral cuando mi mano derecha esta pegada a la pierna (neutral)
         float fx=k.hand.x, fy=k.hand.y;
         float dx = fx - k.nx;
         float dy = fy - k.ny;
@@ -531,14 +532,14 @@ static Dir kinect_step(KinectCtx& k){
             k.g.neutralCnt = 0;
         }
 
-        // Normalizados + dominancia
+        // Normalizados 
         float ndx = std::fabs(dx)/thH;
         float ndy = std::fabs(dy)/thV;
 
         bool domH = (ndx >= 1.0f) && (ndx >= k.axisRatioH * std::max(1e-6f, ndy));
         bool domV = (ndy >= 1.0f) && (ndy >= k.axisRatioV * std::max(1e-6f, ndx));
 
-        // Histéresis por eje
+        // accion por el comportamiento de umbrales
         if (k.latchedH && ndx < k.trigOutH) k.latchedH = false;
         if (k.latchedV && ndy < k.trigOutV) k.latchedV = false;
 
@@ -567,7 +568,7 @@ static Dir kinect_step(KinectCtx& k){
             }
         }
 
-        // Disparo inmediato por flanco
+        // Disparo inmediato por mov
         if (k.g.armed && cand!=Dir::None){
             k.g.armed=false;
             k.g.cooldown=k.g.cooldownFrames;
@@ -652,7 +653,7 @@ int run_puzzle_game(const char* imagePath, int grid, int size,
                         std::fprintf(stderr, "[Kinect] Z: reset latch/locks y neutral re-centrado\n");
                         break;
 
-                    case SDLK_p: // atajo manual de pausa
+                    case SDLK_p:
                         toggle_pause();
                         break;
 
@@ -668,7 +669,7 @@ int run_puzzle_game(const char* imagePath, int grid, int size,
         }
         if(!running) break;
 
-        // Leer Kinect SIEMPRE para permitir pausar/salir por gesto aunque esté en pausa
+        // permitir pausar/salir por gesto
         Dir d = kinect_step(k);
         if(d==Dir::Pause){ toggle_pause(); }
         else if(d==Dir::Quit){ request_exit(); }
@@ -704,7 +705,7 @@ int run_puzzle_game(const char* imagePath, int grid, int size,
     return 0;
 }
 
-// ===================== main (solo cuando NO se compila como librería) =====================
+// ----- MAIN -----
 #ifndef BUILD_AS_LIB
 int main(int argc, char** argv){
     Args a; if(!parse_args(argc,argv,a)){ usage(argv[0]); return 0; }

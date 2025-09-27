@@ -1,9 +1,3 @@
-// *********************************************************************
-// puzzle_kinect_final.c — Menú principal para "Puzzle Kinect 3D"
-// Ejecuta el rompecabezas en la MISMA ventana/renderer (sin abrir otra).
-// Requiere game_bridge.h/cpp y refactor mínimo en src/main_sdl_kinect.cpp.
-// *********************************************************************
-
 #define _CRT_SECURE_NO_WARNINGS
 #define SDL_MAIN_HANDLED
 
@@ -25,9 +19,8 @@
   #pragma comment(lib, "Shlwapi.lib")
 #endif
 
-#include "game_bridge.h"  // <— NUEVO: puente hacia el juego
+#include "game_bridge.h"
 
-// ------------------- Layout base -------------------
 static const int BASE_W = 1366;
 static const int BASE_H = 768;
 static const int TARGET_FPS = 60;
@@ -46,7 +39,6 @@ static const SDL_Color COL_V_GREEN = {  20, 210,  80, 255 };
 static const SDL_Color COL_V_PINK  = { 220,  50, 220, 255 };
 static const SDL_Color COL_V_ORANGE= { 230, 140,  20, 255 };
 
-// ------------------- Micro-font 5x7 -------------------
 typedef unsigned char u8;
 static u8 FONT5x7[96][7];
 
@@ -119,7 +111,7 @@ static void draw_text(SDL_Renderer* R, int x, int y, const char* s, int scale, S
   }
 }
 
-// ------------------- Helpers / Backend -------------------
+// Backend -------------------
 static char g_ruta_imagen[MAX_PATH] = "assets\\LogoUAEMex.png";
 static const int G_GRIDS[3] = {2,3,4};
 static int g_nivel_idx = 0; // 0..2
@@ -314,9 +306,7 @@ int main(int argc, char** argv){
           float rr = (90.f*g_ui_scale + 24.f*g_ui_scale); float rr2 = rr*rr;
           if( dist2(mx,my,iniciar.cx,iniciar.cy) <= rr2 ){
             int grid = G_GRIDS[g_nivel_idx];
-            // *** AQUÍ: ejecutar el juego dentro de la MISMA ventana/renderer ***
             run_puzzle_game_c(g_ruta_imagen, grid, 800, win, R);
-            // Al volver, seguimos en el menú
           } else if( dist2(mx,my,cargar.cx,cargar.cy) <= rr2 ){
             seleccionar_imagen();
           } else if( dist2(mx,my,nivel.cx,nivel.cy) <= rr2 ){
