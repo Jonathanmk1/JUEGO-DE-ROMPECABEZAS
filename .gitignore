@@ -1,0 +1,18 @@
+﻿# VS/MSVC
+*.obj
+*.pdb
+*.ilk
+.vs/
+
+# CMake
+/build/
+CMakeFiles/
+CMakeCache.txt
+cmake-build-*/
+
+# Otros
+*.o
+bin/
+*.exe
+vcpkg_installed/
+src/output/
