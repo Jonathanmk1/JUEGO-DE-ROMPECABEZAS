@@ -81,7 +81,12 @@ struct Gfx{
     // Referencia completa y HUD
     SDL_Rect fullSrc{};   // toda la imagen
     int imgW=0, imgH=0;
-    uint32_t startTicks=0; // cronómetro (se resetea al barajar)
+
+    // Cronómetro (con pausa)
+    uint32_t startTicks=0;
+    bool     isPaused=false;
+    uint32_t pauseStart=0;
+    uint32_t pauseAccumMs=0;
 };
 static int clamp_win(int req){
     SDL_Rect u{}; if(SDL_GetDisplayUsableBounds(0,&u)!=0) SDL_GetDisplayBounds(0,&u);
@@ -128,21 +133,26 @@ static void gfx_shutdown(Gfx& g){
     if(g.own_sdl){ SDL_Quit(); }
 }
 
-// --------- FONT 3x5 simple (dígitos y ':') para el cronómetro ----------
+// --------- FONT 3x5 simple (dígitos, ':' y letras para "PAUSA") ----------
 static bool font3x5_rows(char ch, uint8_t (&rows)[5]){
-    // cada fila usa 3 bits (b2 b1 b0). Usamos valores decimales para portabilidad.
     switch(ch){
-        case '0': rows[0]=7; rows[1]=5; rows[2]=5; rows[3]=5; rows[4]=7; return true;          // 111,101,101,101,111
-        case '1': rows[0]=2; rows[1]=6; rows[2]=2; rows[3]=2; rows[4]=7; return true;          // 010,110,010,010,111
-        case '2': rows[0]=7; rows[1]=1; rows[2]=7; rows[3]=4; rows[4]=7; return true;          // 111,001,111,100,111
-        case '3': rows[0]=7; rows[1]=1; rows[2]=7; rows[3]=1; rows[4]=7; return true;          // 111,001,111,001,111
-        case '4': rows[0]=5; rows[1]=5; rows[2]=7; rows[3]=1; rows[4]=1; return true;          // 101,101,111,001,001
-        case '5': rows[0]=7; rows[1]=4; rows[2]=7; rows[3]=1; rows[4]=7; return true;          // 111,100,111,001,111
-        case '6': rows[0]=7; rows[1]=4; rows[2]=7; rows[3]=5; rows[4]=7; return true;          // 111,100,111,101,111
-        case '7': rows[0]=7; rows[1]=1; rows[2]=2; rows[3]=4; rows[4]=4; return true;          // 111,001,010,100,100
-        case '8': rows[0]=7; rows[1]=5; rows[2]=7; rows[3]=5; rows[4]=7; return true;          // 111,101,111,101,111
-        case '9': rows[0]=7; rows[1]=5; rows[2]=7; rows[3]=1; rows[4]=7; return true;          // 111,101,111,001,111
-        case ':': rows[0]=0; rows[1]=2; rows[2]=0; rows[3]=2; rows[4]=0; return true;          // 000,010,000,010,000
+        // dígitos
+        case '0': rows[0]=7; rows[1]=5; rows[2]=5; rows[3]=5; rows[4]=7; return true;
+        case '1': rows[0]=2; rows[1]=6; rows[2]=2; rows[3]=2; rows[4]=7; return true;
+        case '2': rows[0]=7; rows[1]=1; rows[2]=7; rows[3]=4; rows[4]=7; return true;
+        case '3': rows[0]=7; rows[1]=1; rows[2]=7; rows[3]=1; rows[4]=7; return true;
+        case '4': rows[0]=5; rows[1]=5; rows[2]=7; rows[3]=1; rows[4]=1; return true;
+        case '5': rows[0]=7; rows[1]=4; rows[2]=7; rows[3]=1; rows[4]=7; return true;
+        case '6': rows[0]=7; rows[1]=4; rows[2]=7; rows[3]=5; rows[4]=7; return true;
+        case '7': rows[0]=7; rows[1]=1; rows[2]=2; rows[3]=4; rows[4]=4; return true;
+        case '8': rows[0]=7; rows[1]=5; rows[2]=7; rows[3]=5; rows[4]=7; return true;
+        case '9': rows[0]=7; rows[1]=5; rows[2]=7; rows[3]=1; rows[4]=7; return true;
+        case ':': rows[0]=0; rows[1]=2; rows[2]=0; rows[3]=2; rows[4]=0; return true;
+        // letras (PAUSA)
+        case 'P': rows[0]=7; rows[1]=5; rows[2]=7; rows[3]=4; rows[4]=4; return true;
+        case 'A': rows[0]=7; rows[1]=5; rows[2]=7; rows[3]=5; rows[4]=5; return true;
+        case 'U': rows[0]=5; rows[1]=5; rows[2]=5; rows[3]=5; rows[4]=7; return true;
+        case 'S': rows[0]=7; rows[1]=4; rows[2]=7; rows[3]=1; rows[4]=7; return true;
         default: return false;
     }
 }
@@ -155,7 +165,7 @@ static void draw_bitmap_text(SDL_Renderer* ren, const std::string& s, int x, int
         if(font3x5_rows(ch, rows)){
             for(int r=0;r<5;r++){
                 for(int c=0;c<3;c++){
-                    if(rows[r] & (1<<(2-c))){ // bit alto = píxel encendido
+                    if(rows[r] & (1<<(2-c))){
                         SDL_Rect px{ x + c*scale, y + r*scale, scale, scale };
                         SDL_RenderFillRect(ren,&px);
                     }
@@ -165,11 +175,10 @@ static void draw_bitmap_text(SDL_Renderer* ren, const std::string& s, int x, int
         x += advance;
     }
 }
-// ancho en píxeles del texto (para centrar)
 static int bitmap_text_width(int nchars, int scale){
     if(scale<1||nchars<=0) return 0;
     int advance = 3*scale + scale;
-    return nchars*advance - scale; // último no lleva gap
+    return nchars*advance - scale;
 }
 
 static bool gfx_load(Gfx& g,const std::string& path,int N,int winSize,Puzzle& p){
@@ -192,6 +201,7 @@ static bool gfx_load(Gfx& g,const std::string& path,int N,int winSize,Puzzle& p)
     }
     pu_init(p,N);
     g.startTicks = SDL_GetTicks(); // cronómetro desde que cargamos
+    g.isPaused=false; g.pauseAccumMs=0; g.pauseStart=0;
     return true;
 }
 
@@ -250,10 +260,12 @@ static void gfx_draw(Gfx& g,const Puzzle& p,bool solved){
         SDL_SetRenderDrawColor(g.ren,40,40,55,255);
         SDL_RenderDrawRect(g.ren, &dstRef);
 
-        // Cronómetro mm:ss centrado debajo
-        uint32_t elapsed = SDL_GetTicks() - g.startTicks;
+        // Cronómetro mm:ss centrado debajo (respeta pausa)
+        uint32_t now = SDL_GetTicks();
+        uint32_t base = g.isPaused ? g.pauseStart : now;
+        uint32_t elapsed = base - g.startTicks - g.pauseAccumMs;
         int totalSec = int(elapsed/1000u);
-        int mm = (totalSec/60) % 100; // hasta 99
+        int mm = (totalSec/60) % 100;
         int ss = totalSec%60;
         char buf[6]; std::snprintf(buf,sizeof(buf),"%02d:%02d",mm,ss);
 
@@ -269,14 +281,37 @@ static void gfx_draw(Gfx& g,const Puzzle& p,bool solved){
         draw_bitmap_text(g.ren, buf, xText, yText, scale, fg);
     }
 
+    // Overlay de PAUSA (suave)
+    if(g.isPaused){
+        SDL_BlendMode prev; SDL_GetRenderDrawBlendMode(g.ren, &prev);
+        SDL_SetRenderDrawBlendMode(g.ren, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(g.ren, 0, 0, 0, 140);
+        SDL_Rect full{0,0,winW,winH};
+        SDL_RenderFillRect(g.ren,&full);
+
+        const char* word="PAUSA";
+        int nchars=5, scale=12;
+        int w = bitmap_text_width(nchars, scale);
+        int x = (winW - w)/2;
+        int y = (winH - 5*scale)/2;
+        SDL_Color fg{240,240,255,255};
+        draw_bitmap_text(g.ren, word, x, y, scale, fg);
+        SDL_SetRenderDrawBlendMode(g.ren, prev);
+    }
+
     SDL_RenderPresent(g.ren);
 }
 
 // ===================== Kinect + DEBUG (polling) =====================
-enum class Dir{None,Left,Right,Up,Down};
+enum class Dir{None,Left,Right,Up,Down,Pause,Quit};
+
 static const char* dirName(Dir d){
-    switch(d){ case Dir::Left: return "Left"; case Dir::Right: return "Right";
-               case Dir::Up: return "Up"; case Dir::Down: return "Down"; default: return "None"; }
+    switch(d){
+        case Dir::Left: return "Left"; case Dir::Right: return "Right";
+        case Dir::Up: return "Up"; case Dir::Down: return "Down";
+        case Dir::Pause: return "Pause"; case Dir::Quit: return "Quit";
+        default: return "None";
+    }
 }
 
 // Contexto Kinect + parámetros de gestos
@@ -284,7 +319,7 @@ struct KinectCtx{
     bool ready=false, enabled=true;
     bool mirrorX=false;
 
-    // EMA de posición de mano
+    // EMA de posición de mano (derecha)
     struct EMA2 { bool has=false; float x=0,y=0;
         void reset(){has=false;}
         void push(float nx,float ny,float a=0.35f){
@@ -327,6 +362,16 @@ struct KinectCtx{
         int  cooldown=0;      const int cooldownFrames=10;
     } g;
 
+    // ===== Gestos globales (pausa / salir) =====
+    struct Hold { bool counting=false; uint32_t start=0; uint32_t coolUntil=0; } pauseHold, quitHold;
+    // parámetros
+    uint32_t pauseMs = 3000;   // manos arriba 3 s
+    uint32_t quitMs  = 1500;   // brazos extendidos 1.5 s
+    uint32_t holdCooldownMs = 1000;
+    float pauseYFrac = 0.90f;      // por encima de 90% de la distancia hombro-centro -> cabeza
+    float armsOutFracX = 0.85f;    // distancia mínima horizontal desde hombro-centro (en múltiplos de shoulderW)
+    float armsYAlignFrac = 0.35f;  // tolerancia vertical respecto a scy en múltiplos de headSpan
+
     // Debug
     struct DebugSpam{ bool enabled=true; uint32_t last=0; uint32_t everyMs=120; } dbg;
 
@@ -354,11 +399,24 @@ static bool kinect_init(KinectCtx& k){
 #endif
 }
 
+static inline bool hold_eval(bool cond, KinectCtx::Hold& h, uint32_t now, uint32_t needMs, uint32_t cooldownMs){
+    if(now < h.coolUntil){ h.counting=false; return false; }
+    if(cond){
+        if(!h.counting){ h.counting=true; h.start=now; }
+        if(now - h.start >= needMs){ h.counting=false; h.coolUntil = now + cooldownMs; return true; }
+    }else{
+        h.counting=false;
+    }
+    return false;
+}
+
 static Dir kinect_step(KinectCtx& k){
 #ifdef _WIN32
+    uint32_t nowTicks = SDL_GetTicks();
+
     if(!k.ready || !k.enabled){
         if(k.dbg.enabled){
-            uint32_t now=SDL_GetTicks(); 
+            uint32_t now=nowTicks; 
             if(now-k.dbg.last>=k.dbg.everyMs){ k.dbg.last=now; std::printf("(kinect %s)\n",k.enabled?"ON":"OFF"); }
         }
         return Dir::None;
@@ -371,7 +429,7 @@ static Dir kinect_step(KinectCtx& k){
     HRESULT hr=NuiSkeletonGetNextFrame(0,&fr);
     if(FAILED(hr)){
         if(k.dbg.enabled){
-            uint32_t now=SDL_GetTicks(); 
+            uint32_t now=nowTicks; 
             if(now-k.dbg.last>=k.dbg.everyMs){ k.dbg.last=now; std::printf("(sin frame)\n"); }
         }
         return Dir::None;
@@ -385,15 +443,22 @@ static Dir kinect_step(KinectCtx& k){
            s->eSkeletonPositionTrackingState[NUI_SKELETON_POSITION_SHOULDER_CENTER]!= NUI_SKELETON_POSITION_TRACKED)
             continue;
 
-        float hx=s->SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT].x;
-        float hy=s->SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT].y;
+        // Posiciones clave
+        float rx=s->SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT].x;
+        float ry=s->SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT].y;
+        float lx=0.f, ly=0.f; bool leftOK=false;
+        if(s->eSkeletonPositionTrackingState[NUI_SKELETON_POSITION_HAND_LEFT]==NUI_SKELETON_POSITION_TRACKED){
+            lx=s->SkeletonPositions[NUI_SKELETON_POSITION_HAND_LEFT].x;
+            ly=s->SkeletonPositions[NUI_SKELETON_POSITION_HAND_LEFT].y;
+            leftOK=true;
+        }
         float scx=s->SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_CENTER].x;
         float scy=s->SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_CENTER].y;
 
-        if(k.mirrorX){ hx=-hx; scx=-scx; }
+        if(k.mirrorX){ rx=-rx; lx=-lx; scx=-scx; }
 
-        // EMA posición
-        k.hand.push(hx,hy,0.35f);
+        // EMA posición (mano derecha) para gestos de movimiento
+        k.hand.push(rx,ry,0.35f);
 
         // Velocidad (EMA)
         if(!k.havePrev){ k.prev_fx=k.hand.x; k.prev_fy=k.hand.y; k.havePrev=true; }
@@ -420,11 +485,33 @@ static Dir kinect_step(KinectCtx& k){
             headSpan = std::fabs(s->SkeletonPositions[NUI_SKELETON_POSITION_HEAD].y - scy);
         }
 
+        // ================== GESTOS GLOBALES ==================
+        if(leftOK && shoulderW>0 && headSpan>0){
+            // 1) Pausa: ambas manos arriba 3 s
+            bool bothUp = (ry - scy) > k.pauseYFrac*headSpan && (ly - scy) > k.pauseYFrac*headSpan;
+            if(hold_eval(bothUp, k.pauseHold, nowTicks, k.pauseMs, k.holdCooldownMs)){
+                if(k.dbg.enabled) std::printf("[GESTO] PAUSE/TOGGLE\n");
+                return Dir::Pause;
+            }
+
+            // 2) Salir: brazos estirados a los lados (T) 1.5 s
+            bool extR = (rx - scx) >= k.armsOutFracX * shoulderW;   // derecha hacia +X
+            bool extL = (scx - lx) >= k.armsOutFracX * shoulderW;   // izquierda hacia -X
+            bool yAlign = std::fabs(ry - scy) <= k.armsYAlignFrac * headSpan &&
+                          std::fabs(ly - scy) <= k.armsYAlignFrac * headSpan;
+
+            if(hold_eval(extR && extL && yAlign, k.quitHold, nowTicks, k.quitMs, k.holdCooldownMs)){
+                if(k.dbg.enabled) std::printf("[GESTO] QUIT (T-pose)\n");
+                return Dir::Quit;
+            }
+        }
+
+        // ================== GESTOS DE MOVIMIENTO (lo de antes) ==================
         // Umbrales por eje
         float thH = std::max(k.minPos, k.scaleH*(shoulderW>0? shoulderW:0.40f));
         float thV = std::max(k.minPos, k.scaleV*(headSpan  >0? headSpan  :0.35f));
 
-        // Offset desde neutral
+        // Offset desde neutral (mano derecha)
         float fx=k.hand.x, fy=k.hand.y;
         float dx = fx - k.nx;
         float dy = fy - k.ny;
@@ -465,18 +552,18 @@ static Dir kinect_step(KinectCtx& k){
         Dir cand = Dir::None;
         if (k.g.armed){
             if (domV && crossV && k.dirLockV==0 && std::fabs(k.vy) >= vMinV){
-                cand = (dy>0)?Dir::Up:Dir::Down;      // +Y arriba en Kinect
+                cand = (dy>0)?Dir::Up:Dir::Down;
             } else if (domH && crossH && k.dirLockH==0 && std::fabs(k.vx) >= vMinH){
                 cand = (dx>0)?Dir::Right:Dir::Left;
             }
         }
 
         if(k.dbg.enabled){
-            uint32_t now=SDL_GetTicks();
+            uint32_t now=nowTicks;
             if(now-k.dbg.last>=k.dbg.everyMs){
                 k.dbg.last=now;
-                std::printf("dx=%.3f dy=%.3f | ndx=%.2f ndy=%.2f | vx=%.3f vy=%.3f | H[L=%d] V[L=%d] | crossH=%d crossV=%d | cand=%s\n",
-                    dx,dy, ndx,ndy, k.vx,k.vy, k.latchedH?1:0, k.latchedV?1:0, crossH?1:0, crossV?1:0, dirName(cand));
+                std::printf("dx=%.3f dy=%.3f | ndx=%.2f ndy=%.2f | vx=%.3f vy=%.3f | H[L=%d] V[L=%d] | cand=%s\n",
+                    dx,dy, ndx,ndy, k.vx,k.vy, k.latchedH?1:0, k.latchedV?1:0, dirName(cand));
             }
         }
 
@@ -485,20 +572,15 @@ static Dir kinect_step(KinectCtx& k){
             k.g.armed=false;
             k.g.cooldown=k.g.cooldownFrames;
 
-            if (cand==Dir::Left || cand==Dir::Right){
-                k.latchedH = true;
-                k.dirLockH = k.dirLockFrames;
-            } else {
-                k.latchedV = true;
-                k.dirLockV = k.dirLockFrames;
-            }
+            if (cand==Dir::Left || cand==Dir::Right){ k.latchedH = true; k.dirLockH = k.dirLockFrames; }
+            else { k.latchedV = true; k.dirLockV = k.dirLockFrames; }
 
-            // re-centrar neutral al hombro-centro actual
+            // re-centrar neutral
             k.nx = k.lastScx; 
             k.ny = k.lastScy;
 
             k.prev_ndx = ndx; k.prev_ndy = ndy;
-            return cand; // mueve el puzzle en este mismo frame
+            return cand;
         }
 
         k.prev_ndx = ndx; k.prev_ndy = ndy;
@@ -525,7 +607,8 @@ int run_puzzle_game(const char* imagePath, int grid, int size,
         return 1; 
     }
     pu_shuffle(p,(unsigned)SDL_GetTicks(),250);
-    g.startTicks = SDL_GetTicks(); // cronómetro arranca post-barajado
+    g.startTicks = SDL_GetTicks();
+    g.isPaused=false; g.pauseAccumMs=0; g.pauseStart=0;
 
     KinectCtx k; 
     kinect_init(k);
@@ -533,6 +616,11 @@ int run_puzzle_game(const char* imagePath, int grid, int size,
     bool running=true, announced=false;
 
     auto request_exit = [&](){ running = false; };
+    auto toggle_pause = [&](){
+        uint32_t now = SDL_GetTicks();
+        if(!g.isPaused){ g.isPaused=true; g.pauseStart=now; }
+        else { g.isPaused=false; g.pauseAccumMs += now - g.pauseStart; }
+    };
 
     while(running){
         SDL_Event e; 
@@ -544,12 +632,12 @@ int run_puzzle_game(const char* imagePath, int grid, int size,
                 switch(e.key.keysym.sym){
                     case SDLK_ESCAPE: request_exit(); break;
 
-                    case SDLK_LEFT:  if(!announced) pu_move(p,0,-1); break;
-                    case SDLK_RIGHT: if(!announced) pu_move(p,0, 1); break;
-                    case SDLK_UP:    if(!announced) pu_move(p,-1,0); break;
-                    case SDLK_DOWN:  if(!announced) pu_move(p, 1,0); break;
+                    case SDLK_LEFT:  if(!announced && !g.isPaused) pu_move(p,0,-1); break;
+                    case SDLK_RIGHT: if(!announced && !g.isPaused) pu_move(p,0, 1); break;
+                    case SDLK_UP:    if(!announced && !g.isPaused) pu_move(p,-1,0); break;
+                    case SDLK_DOWN:  if(!announced && !g.isPaused) pu_move(p, 1,0); break;
 
-                    case SDLK_s:     pu_shuffle(p,(unsigned)SDL_GetTicks(),250); announced=false; g.startTicks=SDL_GetTicks(); break;
+                    case SDLK_s:     pu_shuffle(p,(unsigned)SDL_GetTicks(),250); announced=false; g.startTicks=SDL_GetTicks(); g.pauseAccumMs=0; g.isPaused=false; break;
 
                     case SDLK_k:     k.enabled=!k.enabled; std::fprintf(stderr,"[Kinect] %s\n",k.enabled?"ON":"OFF"); break;
                     case SDLK_m:     k.mirrorX=!k.mirrorX; std::fprintf(stderr,"[Kinect] mirror=%s\n",k.mirrorX?"true":"false"); break;
@@ -558,22 +646,21 @@ int run_puzzle_game(const char* imagePath, int grid, int size,
                     case SDLK_d:     k.dbg.enabled=!k.dbg.enabled; std::fprintf(stderr,"[DBG] %s\n",k.dbg.enabled?"ON":"OFF"); break;
 
                     case SDLK_z:
-                        // Reset rápido de gestos; el tiempo no se toca
-                        k.g.cooldown = 0;
-                        k.latchedH = k.latchedV = false;
-                        k.dirLockH = k.dirLockV = 0;
-                        k.g.armed = true;
-                        k.g.neutralCnt = k.g.neutralFrames;
-                        k.nx = k.lastScx;
-                        k.ny = k.lastScy;
+                        k.g.cooldown = 0; k.latchedH = k.latchedV = false; k.dirLockH = k.dirLockV = 0;
+                        k.g.armed = true; k.g.neutralCnt = k.g.neutralFrames;
+                        k.nx = k.lastScx; k.ny = k.lastScy;
                         std::fprintf(stderr, "[Kinect] Z: reset latch/locks y neutral re-centrado\n");
+                        break;
+
+                    case SDLK_p: // atajo manual de pausa
+                        toggle_pause();
                         break;
 
                     case SDLK_SPACE:
                         if(announced){
                             pu_shuffle(p,(unsigned)SDL_GetTicks(),250);
                             announced=false;
-                            g.startTicks=SDL_GetTicks(); // reinicia cronómetro al continuar
+                            g.startTicks=SDL_GetTicks(); g.pauseAccumMs=0; g.isPaused=false;
                         }
                         break;
                 }
@@ -581,8 +668,12 @@ int run_puzzle_game(const char* imagePath, int grid, int size,
         }
         if(!running) break;
 
-        if(!announced){
-            switch(kinect_step(k)){
+        // Leer Kinect SIEMPRE para permitir pausar/salir por gesto aunque esté en pausa
+        Dir d = kinect_step(k);
+        if(d==Dir::Pause){ toggle_pause(); }
+        else if(d==Dir::Quit){ request_exit(); }
+        else if(!announced && !g.isPaused){
+            switch(d){
                 case Dir::Left:  pu_move(p,0,-1); break;
                 case Dir::Right: pu_move(p,0, 1); break;
                 case Dir::Up:    pu_move(p,-1,0); break;
